@@ -89,7 +89,7 @@ class Int8Vector {
     this.capacity *= 2
 	}
 	/** 
-	 * This method does nothing if called when vector's size and capacity are equal. If there is excess capacity to the vector (i.e. more slots than are being used as indicated by size member variable) calling this method shrinks the capacity to be equal to size in O(n) time where n is equal to size. The _buffer and _view are reallocated and items copied over.
+	 * This method does nothing if called when vector's size and capacity are equal. If there is excess capacity to the vector (i.e. more slots than are being used as indicated by size member variable) calling this method shrinks the capacity to be equal to size in O(n) time where n is equal to size. Under the hood, the _buffer and _view are reallocated and items copied over.
 	 */
   shrinkToFit(){
     if(this.capacity > this.size){
@@ -110,7 +110,8 @@ class Int8Vector {
     return this.size === 0
   }
   /** 
-   * 
+   * This method does nothing unless this parameter is greater than the current capacity of the vector. This method reallocates the underlying ArrayBuffer to a new one of the capcity you request, copying over all the old data in O(n) time where n is the size of the vector.
+   * @param {number} capacity - The number of 8-bit signed integers that you want the vector to be able to store. 
    */
   reserve(capacity){
     if(capacity > this.capacity){
@@ -122,9 +123,17 @@ class Int8Vector {
       this.capacity = capacity;
     }
   }
+  /**
+   * Capacity of the vector remains the same, but the in-use size is reduced to 0. This is done in O(1) time by simply reducing the size variable of the vector to zero. Technically any data you put into vector before calling this method is still in the _buffer afterwards, but I don't officially recommend that you go looking for it.
+   */
   clear(){
     this.size = 0;
   }
+  /**
+   * @param {number} index - The index at which the new elements will be inserted into the vector. If the value of index is less than the vector's size, then this operation will trigger a "rightward" shift of all elements in the vector that come after the specified index prior to insertion. Reallocation of buffer will occur if new calculated size exceeds vector's capacity.
+   * @param {number} value - 
+   * @param {number} count - 
+   */
   insert(index, value, count = 1){
     if(count >= 1 && count % 1 === 0 
     && index < this.size && index >= 0 
