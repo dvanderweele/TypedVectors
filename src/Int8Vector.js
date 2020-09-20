@@ -1,162 +1,267 @@
-/** Class representing growable array of 8-bit signed integers. */
-class Int8Vector {
-  /** 
-   * Constructor function for initializing vector.
-   * @param {number} length - The starting size and capacity of the vector.
-   * @param {number} value - The value to use for initializing each member of the array. If you provide a number outside of the range of 8-bit signed integers, the underlying engine's behavior will deal with it, probably by wrapping the number around (e.g. if you provide 128, it might wrap it down to -128). The integrity of neighboring members in memory should not be affected in that case, and an error will probably not be thrown even though I can't guarantee this. Basically, don't mess around by trying to store numbers outside of the range.
-   * @throws Will throw an error if length is less than 0 or not an integer.
-   */
-	constructor(length = 0, value = 0) {
-		if (length < 0)
-			throw new Error(
-				"Int8Vector can't be initialized to negative length."
-			);
-		if (length % 1 !== 0)
-			throw new Error(
-				"Int8Vector's length can't be initialized with a non-integer value."
-			);
-		/** 
-		 * The member variable that holds the ArrayBuffer that ultimately holds data structure's sequence of 8-bit signed integers. The data structure reallocates this as necessary. The length of this in 8-bit signed integers should always be reflected in the capacity member variable. Direct access to this by user is possible but not encouraged as there is the potential to violate the integrity of this data structure.  
-		 * @private
-		 */	
-		this._buffer = new ArrayBuffer(length);
-		/** 
-		 * The member variable that holds the DataView used by the data structure to access the ArrayBuffer held in _buffer member variable. Generally reallocated whenever _buffer is. Direct access by user is possible but not encouraged because there is the potential to violate the integrity of this data structure.
-		 * @private
-		 */
-		this._view = new DataView(this._buffer);
-		/** 
-		 * This member variable indicates the length of the in-use portion of the vector. Can be less than or equal to capacity. You will probably break this data structure if you try to modify this member variable yourself.
-		 * @example 
-		 * The indexes 0 through 4 are occupied in a vector with 10 indexes. The capacity is 10, and the size is 5.
-		 * @readonly
-		 */
-		this.size = length
-		/** 
-		 * This member variable indicates the currently usable length of the vector. Can be greater than or equal to size. You will probably break this data structure if you try to modify this member variable yourself.
-		 * @example 
-		 * The indexes 0 through 4 are occupied in a vector with 10 indexes. The capacity is 10, and the size is 5.
-		 * @readonly
-		 */
-		this.capacity = length
-		if(length > 0){
-		  for(var i = 0; i < length; i++){
-		    this._view.setInt8(i, value)
-		  }
-		}
+function int8Vector(length = 0, value = 0) {
+  // Argument Validation
+	if (length < 0) {
+		throw new Error(
+			"int8Vector can't be initialized to negative length."
+		);
 	}
-	/**
-	 * Get an integer from the vector. 
-	 * @param {number} index - The index at which the integer is stored.
-	 * @returns {number} The integer stored at the provided index. 
-	 * @throws If the index value passed is greater than or equal to the vector's size member variable (the vector is zero-indexed), an out of bounds error will be thrown. Accessing vector positions from the end by passing a negative index is not supported.
-	 */
-	at(index){
-	  if(index >= this.size || index < 0) throw Error("Out of bounds Int8Vector access.")
-	  return this._view.getInt8(index)
+	if (length % 1 !== 0) {
+		throw new Error(
+			"int8Vector's length can't be initialized with a non-integer value."
+		);
 	}
-	/**
-	 * Append integer to the end of the vector, incrementing vector's size by one. If there is no more capacity, the vector's capacity is first doubled via vector's doubleCapacity method. 
-	 * @param {number} value - An 8-bit signed integer value for appending to the vector.
-	 */
-	pushBack(value){
-	  if(this.size == this.capacity){
-	    this.doubleCapacity()
+	
+	// Private Members
+	var buffer = new ArrayBuffer(length);
+	var view = new DataView(buffer);
+	var size = length;
+	var capacity = length;
+	if(length > 0){
+    for(let i = 0; i < length; i++){
+	    view.setInt8(i, value);
 	  }
-	  this._view.setInt8(this.size, value)
-	  this.size++
 	}
-	/**
-	 * Reduces size but not capacity of vector by 1, in effect "removing" the last element in the vector.
-	 * @returns The integer stored at the tail end of the vector.
-	 * @throws If vector's size is 0, even if the capacity is greater than 0, an error is thrown.
-	 */
-	popBack(){
-	  if(this.size === 0) throw new Error("Int8Vector of size 0 has nothing to popBack.")
-	  return this._view.getInt8((this.size-- - 1))
+	
+	// Public Accessors & Mutators
+	function getDataView(){
+	  return view;
 	}
-	/** 
-	 * Doubles the capacity of the vector. The size remains the same. Because this requires allocation of a new ArrayBuffer and DataView under the hood, this operation has time complexity of O(n) where n is size of vector, as all items from old buffer need to be copied to new buffer.
-	 */
-	doubleCapacity(){
-	  const tmpb = new ArrayBuffer((this.capacity * 2))
-    const tmpv = new DataView(tmpb)
-    for(var i = 0; i < this.size; i++){
-      tmpv.setInt8(i, this._view.getInt8(i))
+  function getArrayBuffer(){
+    return buffer;
+  }
+	function getSize(){
+	  return size;
+	}
+	function getCapacity(){
+	  return capacity;
+	}
+	function at(index){
+	  if(index >= size || index < 0) { 
+	    throw Error("Out of bounds int8Vector access.");
+	  }
+	  return view.getInt8(index);
+	}
+	function front(){
+	  if(size === 0){
+	    throw new Error("There is no first element to access in a vector with size of 0.");
+	  }
+	  return view.getInt8(0);
+	}
+	function back(){
+	  if(size === 0){
+	    throw new Error("There is no last element to access in a vector with size of 0.");
+	  }
+	  return view.getInt8(size - 1);
+	}
+	function pushBack(value){
+	  if(size == capacity){
+	    doubleCapacity();
+	  }
+	  view.setInt8(size++, value);
+	}
+	function popBack(){
+	  if(size === 0) {
+	    throw new Error("int8Vector of size 0 has nothing to popBack.");
+	  }
+	  return view.getInt8((size-- - 1));
+	}
+	function doubleCapacity(){
+	  const tmpb = new ArrayBuffer((capacity * 2));
+    const tmpv = new DataView(tmpb);
+    for(var i = 0; i < size; i++){
+      tmpv.setInt8(i, view.getInt8(i));
     }
-    this._buffer = tmpb
-    this._view = tmpv
-    this.capacity *= 2
+    buffer = tmpb;
+    view = tmpv;
+    capacity *= 2;
 	}
-	/** 
-	 * This method does nothing if called when vector's size and capacity are equal. If there is excess capacity to the vector (i.e. more slots than are being used as indicated by size member variable) calling this method shrinks the capacity to be equal to size in O(n) time where n is equal to size. Under the hood, the _buffer and _view are reallocated and items copied over.
-	 */
-  shrinkToFit(){
-    if(this.capacity > this.size){
-      const tmpb = new ArrayBuffer(this.size);
+  function shrinkToFit(){
+    if(capacity > size){
+      const tmpb = new ArrayBuffer(size);
       const tmpv = new DataView(tmpb);
-      for(var i = 0; i < this.size; i++){
-        tmpv.setInt8(i, this._view.getInt8(i));
+      for(let i = 0; i < size; i++){
+        tmpv.setInt8(i, view.getInt8(i));
       }
-      this.capacity = this.size;
-      this._buffer = tmpb;
-      this._view = tmpv;
+      capacity = size;
+      buffer = tmpb;
+      view = tmpv;
     }
   }
-  /** 
-   * @returns {boolean} If size (i.e. in-use portion of vector) is 0, this returns true, otherwise this retuens false.
-   */
-  empty(){
-    return this.size === 0
+  function empty(){
+    return size === 0;
   }
-  /** 
-   * This method does nothing unless this parameter is greater than the current capacity of the vector. This method reallocates the underlying ArrayBuffer to a new one of the capcity you request, copying over all the old data in O(n) time where n is the size of the vector.
-   * @param {number} capacity - The number of 8-bit signed integers that you want the vector to be able to store. 
-   */
-  reserve(capacity){
-    if(capacity > this.capacity){
-      const tmpb = new ArrayBuffer(capacity);
+  function reserve(newCapacity){
+    if(newCapacity > capacity){
+      const tmpb = new ArrayBuffer(newCapacity);
       const tmpv = new DataView(tmpb);
-      for(var i = 0; i < this.size; i++){
-        tmpv.setInt8(i, this._view.getInt8(i));
+      for(let i = 0; i < size; i++){
+        tmpv.setInt8(i, view.getInt8(i));
       }
-      this.capacity = capacity;
+      capacity = newCapacity;
     }
   }
-  /**
-   * Capacity of the vector remains the same, but the in-use size is reduced to 0. This is done in O(1) time by simply reducing the size variable of the vector to zero. Technically any data you put into vector before calling this method is still in the _buffer afterwards, but I don't officially recommend that you go looking for it.
-   */
-  clear(){
-    this.size = 0;
+  function clear(){
+    size = 0;
   }
-  /**
-   * @param {number} index - The index at which the new elements will be inserted into the vector. If the value of index is less than the vector's size, then this operation will trigger a "rightward" shift of all elements in the vector that come after the specified index prior to insertion. Reallocation of buffer will occur if new calculated size exceeds vector's capacity.
-   * @param {number} value - 
-   * @param {number} count - 
-   */
-  insert(index, value, count = 1){
-    if(count >= 1 && count % 1 === 0 
-    && index < this.size && index >= 0 
-    && index % 1 === 0){
-      if(this.size + count > this.capacity){
-        this.reserveCapacity((this.size + count))
+  function insert(index = 0, value = 0, count = 1){
+    // validate arguments
+    if(index > size || index < 0 || index % 1 !== 0){
+      throw new Error("Value of 'index' passed to int8Vector.insert must be a valid integer greater than or equal to 0 and no greater than the size of the vector.")
+    }
+    if(count < 1 || count % 1 !== 0){
+      throw new Error("Value of 'count' parameter is optional, but if passed it must be an integer greater than or equal to 1.");
+    }
+    
+    // insert element(s) based on type of value variable
+    if(typeof value == "number"){
+      // resize vector if needed
+      if(size + count >= capacity){
+        reserve((size + count));
       }
-      if(count === 1){
-        let tmpa, tmpb;
-        tmpa = this._view.getInt8(index);
-        tmpb = this._view.getInt8((index + 1));
-        this._view.setInt8(index, value);
-        for(var i = (index + 1); i < this.capacity; i++){
-          this._view.setInt(i, tmpa);
-          tmpa = tmpb;
-          if(i + 1 < this.capacity) tmpb = this._view.getInt8((i + 1));
+      if(index === size){
+        // simply append value(s)
+        for(let i = size; i < size + count; i++){
+           view.setInt8(i, value);
         }
       } else {
-
+        // shift value(s) that are to right of insertion point
+        for(let i = size - 1; i >= index; i--){
+          let tmp = view.getInt8(i);
+          view.setInt8(i + count, tmp);
+        }
+        // insert value(s)
+        for(let j = 0; j < count; j++){
+          view.setInt8(index + j, value);
+        }
       }
-      this.size = this.size + count;
+      size += count;
+    } else if(value instanceof DataView) {
+      const len = value.byteLength;
+      // resize vector if needed
+      if(size + len >= capacity){
+        reserve((size + len));
+      }
+      if(index === size){
+        // simply append value(s)
+        for(let i = 0; i < len; i++){
+          view.setInt8(i + size, value.getInt8(i));
+        }
+      } else {
+        // shift value(s) that are to right of insertion point
+        for(let i = size - 1; i >= index; i--){
+          let tmp = view.getInt8(i);
+          view.setInt8(i + len, tmp);
+        }
+        // insert value(s)
+        for(let j = 0; j < len; j++){
+          view.setInt8(index + j, value.getInt8(j));
+        }
+      }
+      size += len;
+    } else if(value instanceof Int8Array) {
+      const len = value.length;
+      // resize vector if needed
+      if(size + len >= capacity){
+        reserve((size + len));
+      }
+      if(index === size){
+        // simply append value(s)
+        for(let i = 0; i < len; i++){
+          view.setInt8(i + size, value[i]);
+        }
+      } else {
+        // shift value(s) that are to right of insertion point
+        for(let i = size - 1; i >= index; i--){
+          let tmp = view.getInt8(i);
+          view.setInt8(i + len, tmp);
+        }
+        // insert value(s)
+        for(let j = 0; j < len; j++){
+          view.setInt8(index + j, value[j]);
+        }
+      }
+      size += len;
+    } else if(value instanceof ArrayBuffer) {
+      const tmpView = new DataView(value);
+      const len = tmpView.byteLength;
+      // resize vector if needed
+      if(size + len >= capacity){
+        reserve((size + len));
+      }
+      if(index === size){
+        // simply append value(s)
+        for(let i = 0; i < len; i++){
+          view.setInt8(i + size, tmpView.getInt8(i));
+        }
+      } else {
+        // shift value(s) that are to right of insertion point
+        for(let i = size - 1; i >= index; i--){
+          let tmp = view.getInt8(i);
+          view.setInt8(i + len, tmp);
+        }
+        // insert value(s)
+        for(let j = 0; j < len; j++){
+          view.setInt8(index + j, tmpView.getInt8(j));
+        }
+      }
+      size += len;
     }
   }
+  function erase(index = 0, quantity = 1){
+    // validate arguments
+    if(size === 0){
+      throw new Error("Cannot erase elements from a vector that has a size of 0.");
+    }
+    if(index < 0 || index > view.size - 1 || index % 1 !== 0){
+      throw new Error("Index passed must a valid integer within range of 0 to one less than the current size of the vector.");
+    }
+    if(quantity < 1 || quantity % 1 !== 0 || quantity > size - index){
+      throw new Error("Quantity of values to erase must be a valid integer greater than or equal to one, and not more than the value calculated by subtracting the index from which erasure is to start from the current size of the vector.");
+    }
+    // only shift elements if erasure will not take us through end of vector
+    if(index + quantity < size){
+      for(let i = index + quantity; i < size; i++){
+        
+      }
+    }
+    // set new size of vector
+    size -= quantity;
+  }
+  function resize(){
+
+  }
+  function swap(otherVector){
+
+  }
+  
+  const userAccess = {
+    at,
+    front,
+    back,
+    pushBack,
+    popBack,
+    getSize,
+    getCapacity,
+    doubleCapacity,
+    shrinkToFit,
+    empty,
+    clear,
+    reserve,
+    insert,
+    getDataView,
+    getArrayBuffer,
+    erase
+  };
+  
+  userAccess[Symbol.Iterator] = function *(){
+    for(let i = 0; i < size; i++){
+      yield view.getInt8(i);
+    }
+  };
+  
+  Object.freeze(userAccess);
+  
+  return userAccess;
 }
 
-export { Int8Vector }
+export { int8Vector };
