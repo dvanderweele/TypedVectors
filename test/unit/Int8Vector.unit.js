@@ -1,2 +1,5 @@
-import { Int8Vector } from '../../src/index.js'
-i
+import { int8Vector } from '../../src/index.js'
+
+export function test(){
+
+}

@@ -5,16 +5,11 @@ function int8Vector(length = 0, value = 0) {
 			"int8Vector can't be initialized to negative length."
 		);
 	}
-	if (length % 1 !== 0) {
-		throw new Error(
-			"int8Vector's length can't be initialized with a non-integer value."
-		);
-	}
 	
 	// Private Members
 	var buffer = new ArrayBuffer(length);
 	var view = new DataView(buffer);
-	var size = length;
+	var size = Math.floor(length);
 	var capacity = length;
 	if(length > 0){
     for(let i = 0; i < length; i++){
@@ -35,34 +30,28 @@ function int8Vector(length = 0, value = 0) {
 	function getCapacity(){
 	  return capacity;
 	}
-	function at(index){
-	  if(index >= size || index < 0) { 
-	    throw Error("Out of bounds int8Vector access.");
-	  }
+	function at(index = 0){
+	  if(index >= size || index < 0) return undefined;
 	  return view.getInt8(index);
 	}
+	function set(index = 0, value = 0){
+	  if(index >= size || index < 0) return undefined;
+	  view.setInt8(index, value);
+	}
 	function front(){
-	  if(size === 0){
-	    throw new Error("There is no first element to access in a vector with size of 0.");
-	  }
+	  if(size === 0) return undefined;
 	  return view.getInt8(0);
 	}
 	function back(){
-	  if(size === 0){
-	    throw new Error("There is no last element to access in a vector with size of 0.");
-	  }
+	  if(size === 0) return undefined;
 	  return view.getInt8(size - 1);
 	}
 	function pushBack(value){
-	  if(size == capacity){
-	    doubleCapacity();
-	  }
+	  if(size == capacity) doubleCapacity();
 	  view.setInt8(size++, value);
 	}
 	function popBack(){
-	  if(size === 0) {
-	    throw new Error("int8Vector of size 0 has nothing to popBack.");
-	  }
+	  if(size === 0) return undefined;
 	  return view.getInt8((size-- - 1));
 	}
 	function doubleCapacity(){
@@ -105,8 +94,8 @@ function int8Vector(length = 0, value = 0) {
   }
   function insert(index = 0, value = 0, count = 1){
     // validate arguments
-    if(index > size || index < 0 || index % 1 !== 0){
-      throw new Error("Value of 'index' passed to int8Vector.insert must be a valid integer greater than or equal to 0 and no greater than the size of the vector.")
+    if(index > size || index < 0){
+      throw new Error("Value of 'index' passed to int8Vector.insert must be greater than or equal to 0 and no greater than the size of the vector.")
     }
     if(count < 1 || count % 1 !== 0){
       throw new Error("Value of 'count' parameter is optional, but if passed it must be an integer greater than or equal to 1.");
@@ -209,33 +198,63 @@ function int8Vector(length = 0, value = 0) {
   }
   function erase(index = 0, quantity = 1){
     // validate arguments
-    if(size === 0){
-      throw new Error("Cannot erase elements from a vector that has a size of 0.");
-    }
-    if(index < 0 || index > view.size - 1 || index % 1 !== 0){
-      throw new Error("Index passed must a valid integer within range of 0 to one less than the current size of the vector.");
-    }
-    if(quantity < 1 || quantity % 1 !== 0 || quantity > size - index){
-      throw new Error("Quantity of values to erase must be a valid integer greater than or equal to one, and not more than the value calculated by subtracting the index from which erasure is to start from the current size of the vector.");
-    }
-    // only shift elements if erasure will not take us through end of vector
-    if(index + quantity < size){
-      for(let i = index + quantity; i < size; i++){
-        
+    if(size > 0 && index >= 0 && index <= view.size - 1){
+      if(quantity < 1 || quantity % 1 !== 0 || quantity > size - index){
+        throw new Error("Quantity of values to erase must be a valid integer greater than or equal to one, and not more than the value calculated by subtracting the index (from which erasure is to start) from the current size of the vector.");
       }
+      // only shift elements if erasure will not take us through end of vector
+      if(index + quantity < size){
+        for(let i = index + quantity; i < size; i++){
+          const newIdx = i - quantity;
+          view.setInt8(newIdx, view.getInt8(i));
+        }
+      }
+      // set new size of vector
+      size -= quantity;
     }
-    // set new size of vector
-    size -= quantity;
   }
-  function resize(){
+  function resize(newSize){
 
   }
   function swap(otherVector){
-
+    buffer = otherVector.getArrayBuffer();
+    view = otherVector.getDataView();
+    capacity = buffer.byteLength;
+    size = view.byteLength;
+  }
+  function forEach(callback){
+    for(let i = 0; i < size; i++){
+      callback(view.getInt8(i), i);
+    }
+  }
+  function map(callback){
+    const res = int8Vector(size);
+    for(let i = 0; i < size; i++){
+      res.set(i, callback(view.getInt8(i), i));
+    }
+    return res;
+  }
+  function mapInPlace(callback){
+    for(let i = 0; i < size; i++){
+      view.setInt8(i, callback(view.getInt8(i), i));
+    }
+  }
+  function reduce(callback, initialValue){
+    for(let i = 0; i < size; i++){
+      initialValue = callback(initialvalue, view.getInt8(i), i);
+    }
+    return initialValue;
+  }
+  function reduceRight(callback, initialValue){
+    for(let i = size - 1; i >= 0; i--){
+      initialValue = callback(initialvalue, view.getInt8(i), i);
+    }
+    return initialValue;
   }
   
   const userAccess = {
     at,
+    set,
     front,
     back,
     pushBack,
@@ -250,7 +269,13 @@ function int8Vector(length = 0, value = 0) {
     insert,
     getDataView,
     getArrayBuffer,
-    erase
+    erase,
+    forEach,
+    map,
+    mapInPlace,
+    reduce,
+    reduceRight,
+    swap
   };
   
   userAccess[Symbol.Iterator] = function *(){
