@@ -1,4 +1,4 @@
-function int8Vector(length = 0, value = 0) {
+module.exports = function(length = 0, value = 0) {
   // Argument Validation
 	if (length < 0) {
 		throw new Error(
@@ -37,6 +37,7 @@ function int8Vector(length = 0, value = 0) {
 	function set(index = 0, value = 0){
 	  if(index >= size || index < 0) return undefined;
 	  view.setInt8(index, value);
+    return null;
 	}
 	function front(){
 	  if(size === 0) return undefined;
@@ -55,14 +56,21 @@ function int8Vector(length = 0, value = 0) {
 	  return view.getInt8((size-- - 1));
 	}
 	function doubleCapacity(){
-	  const tmpb = new ArrayBuffer((capacity * 2));
+	  let tmpb;
+	  let newc;
+	  if(capacity < 1) {
+	    newc = 1;
+	  } else {
+	    newc = capacity * 2;
+	  }
+	  tmpb = new ArrayBuffer(newc);
     const tmpv = new DataView(tmpb);
     for(var i = 0; i < size; i++){
       tmpv.setInt8(i, view.getInt8(i));
     }
     buffer = tmpb;
     view = tmpv;
-    capacity *= 2;
+    capacity = newc;
 	}
   function shrinkToFit(){
     if(capacity > size){
@@ -95,7 +103,7 @@ function int8Vector(length = 0, value = 0) {
   function insert(index = 0, value = 0, count = 1){
     // validate arguments
     if(index > size || index < 0){
-      throw new Error("Value of 'index' passed to int8Vector.insert must be greater than or equal to 0 and no greater than the size of the vector.")
+      throw new Error("Value of 'index' passed to int8Vector.insert must be greater than or equal to 0 and no greater than the size of the vector.");
     }
     if(count < 1 || count % 1 !== 0){
       throw new Error("Value of 'count' parameter is optional, but if passed it must be an integer greater than or equal to 1.");
@@ -288,5 +296,3 @@ function int8Vector(length = 0, value = 0) {
   
   return userAccess;
 }
-
-export { int8Vector };
