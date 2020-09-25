@@ -1,4 +1,4 @@
-module.exports = function(length = 0, value = 0) {
+module.exports = function int8Vector(length = 0, value = 0) {
   // Argument Validation
 	if (length < 0) {
 		throw new Error(
@@ -236,7 +236,7 @@ module.exports = function(length = 0, value = 0) {
     }
   }
   function map(callback){
-    const res = int8Vector(size);
+    const res = int8Vector(size, 0);
     for(let i = 0; i < size; i++){
       res.set(i, callback(view.getInt8(i), i));
     }
@@ -247,15 +247,15 @@ module.exports = function(length = 0, value = 0) {
       view.setInt8(i, callback(view.getInt8(i), i));
     }
   }
-  function reduce(callback, initialValue){
+  function reduce(callback, initialValue = 0){
     for(let i = 0; i < size; i++){
-      initialValue = callback(initialvalue, view.getInt8(i), i);
+      initialValue = callback(initialValue, view.getInt8(i), i);
     }
     return initialValue;
   }
-  function reduceRight(callback, initialValue){
+  function reduceRight(callback, initialValue = 0){
     for(let i = size - 1; i >= 0; i--){
-      initialValue = callback(initialvalue, view.getInt8(i), i);
+      initialValue = callback(initialValue, view.getInt8(i), i);
     }
     return initialValue;
   }
