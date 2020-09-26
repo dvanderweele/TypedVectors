@@ -18,6 +18,8 @@ module.exports = function int8Vector(length = 0, value = 0) {
 	}
 	
 	// Public Accessors & Mutators
+	var MIN = -128;
+	var MAX = 127;
 	function getDataView(){
 	  return view;
 	}
@@ -95,6 +97,8 @@ module.exports = function int8Vector(length = 0, value = 0) {
         tmpv.setInt8(i, view.getInt8(i));
       }
       capacity = newCapacity;
+      buffer = tmpb;
+      view = tmpv;
     }
   }
   function clear(){
@@ -112,8 +116,8 @@ module.exports = function int8Vector(length = 0, value = 0) {
     // insert element(s) based on type of value variable
     if(typeof value == "number"){
       // resize vector if needed
-      if(size + count >= capacity){
-        reserve((size + count));
+      if(size + count > capacity){
+        reserve(size + count);
       }
       if(index === size){
         // simply append value(s)
@@ -123,8 +127,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
       } else {
         // shift value(s) that are to right of insertion point
         for(let i = size - 1; i >= index; i--){
-          let tmp = view.getInt8(i);
-          view.setInt8(i + count, tmp);
+          view.setInt8((i + count), view.getInt8(i));
         }
         // insert value(s)
         for(let j = 0; j < count; j++){
@@ -135,7 +138,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
     } else if(value instanceof DataView) {
       const len = value.byteLength;
       // resize vector if needed
-      if(size + len >= capacity){
+      if(size + len > capacity){
         reserve((size + len));
       }
       if(index === size){
@@ -146,8 +149,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
       } else {
         // shift value(s) that are to right of insertion point
         for(let i = size - 1; i >= index; i--){
-          let tmp = view.getInt8(i);
-          view.setInt8(i + len, tmp);
+          view.setInt8((i + len), view.getInt8(i));
         }
         // insert value(s)
         for(let j = 0; j < len; j++){
@@ -158,7 +160,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
     } else if(value instanceof Int8Array) {
       const len = value.length;
       // resize vector if needed
-      if(size + len >= capacity){
+      if(size + len > capacity){
         reserve((size + len));
       }
       if(index === size){
@@ -169,8 +171,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
       } else {
         // shift value(s) that are to right of insertion point
         for(let i = size - 1; i >= index; i--){
-          let tmp = view.getInt8(i);
-          view.setInt8(i + len, tmp);
+          view.setInt8((i + len), view.getInt8(i));
         }
         // insert value(s)
         for(let j = 0; j < len; j++){
@@ -182,7 +183,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
       const tmpView = new DataView(value);
       const len = tmpView.byteLength;
       // resize vector if needed
-      if(size + len >= capacity){
+      if(size + len > capacity){
         reserve((size + len));
       }
       if(index === size){
@@ -193,8 +194,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
       } else {
         // shift value(s) that are to right of insertion point
         for(let i = size - 1; i >= index; i--){
-          let tmp = view.getInt8(i);
-          view.setInt8(i + len, tmp);
+          view.setInt8((i + len), view.getInt8(i));
         }
         // insert value(s)
         for(let j = 0; j < len; j++){
@@ -221,14 +221,22 @@ module.exports = function int8Vector(length = 0, value = 0) {
       size -= quantity;
     }
   }
-  function resize(newSize){
-
+  function resize(newSize, value = 0){
+    if(newSize > capacity){
+      reserve(newSize);
+    } 
+    if(newSize > size){
+      for(i = size; i < capacity; i++){
+        view.setInt8(i, value);
+      }
+    }
+    size = newSize;
   }
   function swap(otherVector){
     buffer = otherVector.getArrayBuffer();
     view = otherVector.getDataView();
     capacity = buffer.byteLength;
-    size = view.byteLength;
+    size = otherVector.getSize();
   }
   function forEach(callback){
     for(let i = 0; i < size; i++){
@@ -260,7 +268,9 @@ module.exports = function int8Vector(length = 0, value = 0) {
     return initialValue;
   }
   
-  const userAccess = {
+  const int8VectorAPI = {
+    MIN,
+    MAX,
     at,
     set,
     front,
@@ -274,6 +284,7 @@ module.exports = function int8Vector(length = 0, value = 0) {
     empty,
     clear,
     reserve,
+    resize,
     insert,
     getDataView,
     getArrayBuffer,
@@ -286,13 +297,13 @@ module.exports = function int8Vector(length = 0, value = 0) {
     swap
   };
   
-  userAccess[Symbol.Iterator] = function *(){
+  int8VectorAPI[Symbol.iterator] = function *(){
     for(let i = 0; i < size; i++){
       yield view.getInt8(i);
     }
   };
   
-  Object.freeze(userAccess);
+  Object.freeze(int8VectorAPI);
   
-  return userAccess;
+  return int8VectorAPI;
 }
