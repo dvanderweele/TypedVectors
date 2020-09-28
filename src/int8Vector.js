@@ -202,11 +202,14 @@ module.exports = function int8Vector(length = 0, value = 0) {
         }
       }
       size += len;
+    } else {
+      return undefined;
     }
+    return null;
   }
   function erase(index = 0, quantity = 1){
     // validate arguments
-    if(size > 0 && index >= 0 && index <= view.size - 1){
+    if(size > 0 && index >= 0 && index < size){
       if(quantity < 1 || quantity % 1 !== 0 || quantity > size - index){
         throw new Error("Quantity of values to erase must be a valid integer greater than or equal to one, and not more than the value calculated by subtracting the index (from which erasure is to start) from the current size of the vector.");
       }
@@ -219,7 +222,10 @@ module.exports = function int8Vector(length = 0, value = 0) {
       }
       // set new size of vector
       size -= quantity;
+    } else {
+      return undefined;
     }
+    return null;
   }
   function resize(newSize, value = 0){
     if(newSize > capacity){
