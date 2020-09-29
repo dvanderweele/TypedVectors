@@ -249,8 +249,8 @@ module.exports = function int8Vector(length = 0, value = 0) {
       callback(view.getInt8(i), i);
     }
   }
-  function map(callback){
-    const res = int8Vector(size, 0);
+  function map(callback, preserveCapacity = true){
+    const res = int8Vector(preserveCapacity ? capacity : size, 0);
     for(let i = 0; i < size; i++){
       res.set(i, callback(view.getInt8(i), i));
     }
@@ -272,6 +272,47 @@ module.exports = function int8Vector(length = 0, value = 0) {
       initialValue = callback(initialValue, view.getInt8(i), i);
     }
     return initialValue;
+  }
+
+  function filter(callback, preserveCapacity = true){
+    const res = int8Vector(preserveCapacity ? capacity : size, 0);
+    let gapStart = -1;
+    let filterQty = 0;
+    for(let i = 0; i < size; i++){
+      if(callback(view.getInt8(i), i)){
+        // keep current item, move if needed
+        if(gapStart !== -1){
+          res.set(gapStart, view.getInt8(i));
+          gapStart++;
+        } else {
+          res.set(i, view.getInt8(i));
+        }
+        filterQty++;
+      } else {
+        if(gapStart === -1) gapStart = i;
+      }
+    }
+    res.resize(filterQty);
+    return res;
+  }
+
+  function filterInPlace(callback){
+    let gapStart = -1;
+    let filterQty = 0;
+    for(let i = 0; i < size; i++){
+      if(callback(view.getInt8(i), i)){
+        // keep current item, move if needed
+        if(gapStart !== -1){
+          view.setInt8(gapStart, view.getInt8(i));
+          gapStart++;
+        } 
+      } else {
+        // don't keep current item
+        filterQty++;
+        if(gapStart === -1) gapStart = i;
+      }
+    }
+    size -= filterQty;
   }
   
   const int8VectorAPI = {
@@ -300,7 +341,9 @@ module.exports = function int8Vector(length = 0, value = 0) {
     mapInPlace,
     reduce,
     reduceRight,
-    swap
+    swap, 
+    filter, 
+    filterInPlace
   };
   
   int8VectorAPI[Symbol.iterator] = function *(){

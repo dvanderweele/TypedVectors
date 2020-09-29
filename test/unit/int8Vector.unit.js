@@ -162,6 +162,10 @@ QUnit.test("map method.", assert => {
   assert.equal(v2.at(0), 2);
   assert.equal(v2.at(1), 3);
   assert.equal(v2.at(2), 4);
+  v1.doubleCapacity();
+  const v3 = v1.map(cb, false);
+  assert.equal(v3.getCapacity(), 3);
+  assert.equal(v3.getSize(), 3);
 });
 
 QUnit.test("mapInPlace method.", assert => {
@@ -420,4 +424,53 @@ QUnit.test("erase method.", assert => {
   const v3 = int8Vector();
   assert.equal(v3.erase(), undefined);
   assert.equal(v3.erase(-1), undefined);
+});
+
+QUnit.test("filterInPlace method.", assert => {
+  function cb(value, index){
+    if(index % 2 === 0){
+      return true;
+    } else {
+      return false;
+    }
+  }
+  const v1 = int8Vector(5,0);
+  v1.set(1,1);
+  v1.set(2,2);
+  v1.set(3,3);
+  v1.set(4,4);
+  v1.filterInPlace(cb);
+  assert.equal(v1.getCapacity(), 5);
+  assert.equal(v1.getSize(), 3);
+  assert.equal(v1.at(0), 0);
+  assert.equal(v1.at(1), 2);
+  assert.equal(v1.at(2), 4);
+});
+
+QUnit.test("filter method.", assert => {
+  function cb(value, index){
+    if(index % 2 === 0){
+      return true;
+    } else {
+      return false;
+    }
+  }
+  const v1 = int8Vector(5,0);
+  v1.set(1,1);
+  v1.set(2,2);
+  v1.set(3,3);
+  v1.set(4,4);
+  const v2 = v1.filter(cb);
+  v1.doubleCapacity();
+  const v3 = v1.filter(cb, false);
+  assert.equal(v2.getCapacity(), 5);
+  assert.equal(v2.getSize(), 3);
+  assert.equal(v2.at(0), 0);
+  assert.equal(v2.at(1), 2);
+  assert.equal(v2.at(2), 4);
+  assert.equal(v3.getCapacity(), 5);
+  assert.equal(v3.getSize(), 3);
+  assert.equal(v3.at(0), 0);
+  assert.equal(v3.at(1), 2);
+  assert.equal(v3.at(2), 4);
 });
