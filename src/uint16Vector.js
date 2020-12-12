@@ -157,7 +157,7 @@ module.exports = function uint16Vector(length = 0, value = 0) {
         }
       }
       size += len;
-    } else if(value instanceof Int16Array) {
+    } else if(value instanceof Uint16Array) {
       const len = value.length;
       // resize vector if needed
       if(size + len > capacity){
